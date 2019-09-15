@@ -2,7 +2,8 @@
 all: build
 
 build:
-	go build -o build/wg_mgr
+	go build -ldflags=-w -o build/wgmgr 
 
-debug: build
-	sudo ./build/wg_mgr
+debug:
+	go build -gcflags=all="-N -l" -o build/wgmgr
+	sudo gdb ./build/wgmgr

@@ -33,7 +33,8 @@ docker-compose up -d
 
 Run the server
 ```
-make debug
+make build
+sudo ./build/wgmgr
 ```
 
 This will run the bin under sudo and sets up an interface with peers.
@@ -42,6 +43,12 @@ After you kill the server you will have clean up:
 ```
 sudo ip link del TestNet
 ```
+
+## Run gdb
+```
+make debug
+```
+This will compile with less optimizations and the gdb as sudo.  
 
 ## Todo for an initial working version
 - Clean up after ourselves
