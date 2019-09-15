@@ -39,11 +39,6 @@ sudo ./build/wgmgr
 
 This will run the bin under sudo and sets up an interface with peers.
 
-After you kill the server you will have clean up:
-```
-sudo ip link del TestNet
-```
-
 ## Run gdb
 ```
 make debug
