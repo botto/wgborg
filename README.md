@@ -51,9 +51,9 @@ make debug
 This will compile with less optimizations and the gdb as sudo.  
 
 ## Todo for an initial working version
-- Clean up after ourselves
-- Switch to bbolt db (want less deps)
-- Set up remaing api endpoints
+- [x] Clean up after ourselves
+- [ ] Set up remaing api endpoints
+- [ ] Refactor store so it's pluggable (i.e.: sqlite, bbolt, consul)
 
 
 ## Disclaimer

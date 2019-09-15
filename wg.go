@@ -15,7 +15,7 @@ import (
 // and configurs them and adds the peers.
 func (w *WGMgr) SetupInterfaces() {
 	var err error
-	wgClient, err = wgctrl.New()
+	w.wgClient, err = wgctrl.New()
 	if err != nil {
 		log.Fatalf("failed to open wgctrl: %v", err)
 	}
@@ -27,13 +27,13 @@ func (w *WGMgr) SetupInterfaces() {
 		return
 	}
 	for _, ifDev := range networks {
-		configureInterface(ifDev.Port, ifDev.PrivateKey, ifDev.Name)
+		w.configureInterface(ifDev.Port, ifDev.PrivateKey, ifDev.Name)
 		interfacePeers := w.GetNetworkPeers(ifDev.ID)
-		addWgPeersToDevice(interfacePeers, ifDev.Name)
+		w.addWgPeersToDevice(interfacePeers, ifDev.Name)
 	}
 }
 
-func configureInterface(port int, priveKeyRaw string, name string) {
+func (w *WGMgr) configureInterface(port int, priveKeyRaw string, name string) {
 	privKey, err := wgtypes.ParseKey(priveKeyRaw)
 	if err != nil {
 		log.Printf("Could not parse key ")
@@ -41,8 +41,8 @@ func configureInterface(port int, priveKeyRaw string, name string) {
 	// Generate new netlink of wireguard type
 	linkAttrs := netlink.NewLinkAttrs()
 	linkAttrs.Name = name
-	wgInt = &netlink.GenericLink{LinkAttrs: linkAttrs, LinkType: "wireguard"}
-	err = netlink.LinkAdd(wgInt)
+	w.wgInt = &netlink.GenericLink{LinkAttrs: linkAttrs, LinkType: "wireguard"}
+	err = netlink.LinkAdd(w.wgInt)
 	if err != nil {
 		log.Fatalf("could not add '%s' (%v)\n", linkAttrs.Name, err)
 	}
@@ -50,7 +50,7 @@ func configureInterface(port int, priveKeyRaw string, name string) {
 		PrivateKey: &privKey,
 		ListenPort: &port,
 	}
-	err = wgClient.ConfigureDevice(wgInt.Name, deviceConfig)
+	err = w.wgClient.ConfigureDevice(w.wgInt.Name, deviceConfig)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
@@ -80,12 +80,12 @@ func peerToWgPeer(peerDef Peer) (*wgtypes.PeerConfig, error) {
 	return &wgPeer, nil
 }
 
-func addWgPeersToDevice(wgPeers *[]wgtypes.PeerConfig, deviceName string) {
+func (w *WGMgr) addWgPeersToDevice(wgPeers *[]wgtypes.PeerConfig, deviceName string) {
 	deviceConfig := wgtypes.Config{
 		ReplacePeers: true,
 		Peers:        *wgPeers,
 	}
-	wgClient.ConfigureDevice(deviceName, deviceConfig)
+	w.wgClient.ConfigureDevice(deviceName, deviceConfig)
 }
 
 // GetNetworkPeers grabs peers from DB.

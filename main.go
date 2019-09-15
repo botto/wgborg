@@ -13,16 +13,12 @@ import (
 	"golang.zx2c4.com/wireguard/wgctrl"
 )
 
-// WGCtrl Client ref
-var wgClient *wgctrl.Client
-
-// WGInterface ref
-var wgInt *netlink.GenericLink
-
 // WGMgr container struct
 type WGMgr struct {
-	store   *Store
-	closing chan bool
+	wgInt    *netlink.GenericLink
+	wgClient *wgctrl.Client
+	store    *Store
+	closing  chan bool
 }
 
 func main() {
@@ -39,6 +35,7 @@ func main() {
 		select {
 		case <-wgMgr.closing:
 			wgMgr.cleanUp()
+			os.Exit(0)
 		}
 	}
 	// setupServer()
@@ -49,8 +46,7 @@ func main() {
 
 func (w *WGMgr) cleanUp() {
 	w.store.Close()
-	err := netlink.LinkDel(wgInt)
-	fmt.Printf("Link %s\n", wgInt)
+	err := netlink.LinkDel(w.wgInt)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -90,6 +86,5 @@ func handleSignals(closing chan<- bool) {
 		<-c
 		fmt.Println("Sigterm caught, closing cleanely")
 		closing <- true
-		os.Exit(0)
 	}()
 }
