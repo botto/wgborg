@@ -23,7 +23,7 @@ Once wireguard is stable then this project will try to get to a V1 as soon as po
 ## To get started
 Grab a copy of the code
 ```
-git clone git@github.com/botto/wg_mgr.git
+git clone git@github.com/botto/wgmgr.git
 ```
 
 Set up deps (this includes some dummy data)
