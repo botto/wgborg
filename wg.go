@@ -29,7 +29,7 @@ func (w *WGMgr) SetupInterfaces() {
 	for _, ifDev := range networks {
 		w.configureInterface(ifDev.Port, ifDev.PrivateKey, ifDev.Name)
 		interfacePeers := w.GetNetworkPeers(ifDev.ID)
-		w.addWgPeersToDevice(interfacePeers, ifDev.Name)
+		w.initPeersOnDevice(interfacePeers, ifDev.Name)
 	}
 }
 
@@ -57,7 +57,7 @@ func (w *WGMgr) configureInterface(port int, priveKeyRaw string, name string) {
 }
 
 func peerToWgPeer(peerDef Peer) (*wgtypes.PeerConfig, error) {
-	_, ipv4Net, err := net.ParseCIDR(peerDef.IP)
+	_, ipv4Net, err := net.ParseCIDR(peerDef.CIDR)
 	if err != nil {
 		log.Printf("Could not parse cidr for peer %s", err)
 		return nil, err
@@ -80,12 +80,26 @@ func peerToWgPeer(peerDef Peer) (*wgtypes.PeerConfig, error) {
 	return &wgPeer, nil
 }
 
-func (w *WGMgr) addWgPeersToDevice(wgPeers *[]wgtypes.PeerConfig, deviceName string) {
+func (w *WGMgr) initPeersOnDevice(wgPeers *[]wgtypes.PeerConfig, deviceName string) {
 	deviceConfig := wgtypes.Config{
 		ReplacePeers: true,
 		Peers:        *wgPeers,
 	}
-	w.wgClient.ConfigureDevice(deviceName, deviceConfig)
+	err := w.wgClient.ConfigureDevice(deviceName, deviceConfig)
+	if err != nil {
+		log.Printf("Failed to add peer %s\n", err)
+	}
+}
+
+func (w *WGMgr) addWgPeersToDevice(wgPeers *[]wgtypes.PeerConfig, deviceName string) {
+	deviceConfig := wgtypes.Config{
+		ReplacePeers: false,
+		Peers:        *wgPeers,
+	}
+	err := w.wgClient.ConfigureDevice(deviceName, deviceConfig)
+	if err != nil {
+		log.Printf("Failed to add peer %s\n", err)
+	}
 }
 
 // GetNetworkPeers grabs peers from DB.

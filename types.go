@@ -9,8 +9,8 @@ type Peer struct {
 	PublicKey string     `json:"public_key"`
 	Name      string     `json:"name"`
 	Psk       string     `json:"psk"`
-	IP        string     `json:"ip"`
-	NetworkID *uuid.UUID `json:"network_id"`
+	CIDR      string     `json:"ip"`
+	NetworkID *uuid.UUID `json:"network"`
 }
 
 // Network contains peers

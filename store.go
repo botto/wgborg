@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 
+	uuid "github.com/google/uuid"
 	_ "github.com/lib/pq"
 )
 
@@ -78,7 +79,7 @@ func (s *Store) LoadPeers(networkID string) ([]Peer, error) {
 			&newPeer.Name,
 			&newPeer.PublicKey,
 			&newPeer.Psk,
-			&newPeer.IP,
+			&newPeer.CIDR,
 		)
 		newPeers = append(newPeers, newPeer)
 	}
@@ -98,7 +99,7 @@ func (s *Store) LoadNetworks() ([]Network, error) {
 	allPeersSQL := `
 		SELECT
 			id,
-			network_name,
+			name,
 			private_key,
 			port,
 			cidr
@@ -135,21 +136,33 @@ func (s *Store) LoadNetworks() ([]Network, error) {
 }
 
 // AddPeer add a new peer to a specific network
-func (s *Store) AddPeer(newPeer Peer) {
+func (s *Store) AddPeer(newPeer *Peer) {
 	newPeerSQL := `
-		INSERT INTO peers (peer_name, public_key, psk, ip, network)
-		VALUES ($1, $2, $3, $4)`
+		INSERT INTO peers (peer_name, public_key, psk, cidr, network)
+		VALUES ($1, $2, $3, $4, $5)`
 	_, err := s.db.Exec(
 		newPeerSQL,
 		newPeer.Name,
 		newPeer.PublicKey,
 		newPeer.Psk,
-		newPeer.IP,
+		newPeer.CIDR,
 		newPeer.NetworkID,
 	)
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+// GetNetworkNameByID returns the name of the WG network.
+func (s *Store) GetNetworkNameByID(networkID *uuid.UUID) (string, error) {
+	var name string
+	networkNameSQL := `SELECT name FROM networks WHERE id=$1`
+	row := s.db.QueryRow(networkNameSQL, networkID.String())
+	err := row.Scan(&name)
+	if err != nil {
+		return "", err
+	}
+	return name, nil
 }
 
 // func (s *Store) AddNetwork(newNetwork Network) {

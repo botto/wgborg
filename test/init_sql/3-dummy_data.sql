@@ -1,4 +1,4 @@
-INSERT INTO networks (id, network_name, private_key, port, cidr) 
+INSERT INTO networks (id, name, private_key, port, cidr) 
 VALUES (
   '8aeb2ad5-422d-4539-a4e5-5b53f4202c46',
   'TestNet',

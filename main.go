@@ -30,7 +30,8 @@ func main() {
 	}
 	wgMgr.setupStore()
 	wgMgr.SetupInterfaces()
-	//setupRoutes()
+	wgMgr.setupRoutes()
+	go setupServer()
 	for {
 		select {
 		case <-wgMgr.closing:
@@ -38,7 +39,6 @@ func main() {
 			os.Exit(0)
 		}
 	}
-	// setupServer()
 	// defer db.Close()
 	// defer wgClient.Close()
 	// defer cleanUp()
@@ -64,8 +64,8 @@ func (w *WGMgr) setupStore() {
 	w.store.Connect(&storeCfg)
 }
 
-func setupRoutes() {
-	http.HandleFunc("/add_peer", handlerAddPeer)
+func (w *WGMgr) setupRoutes() {
+	http.HandleFunc("/add_peer", w.handlerAddPeer)
 }
 
 func setupServer() {
