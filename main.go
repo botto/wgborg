@@ -1,9 +1,12 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
+	"net/rpc"
 	"os"
 	"os/signal"
 	"syscall"
@@ -13,12 +16,20 @@ import (
 	"golang.zx2c4.com/wireguard/wgctrl"
 )
 
+import (
+	//#include <unistd.h>
+	//#include <errno.h>
+	"C"
+)
+
 // WGMgr container struct
 type WGMgr struct {
-	wgInt    *netlink.GenericLink
-	wgClient *wgctrl.Client
-	store    *Store
-	closing  chan bool
+	wgInt      *netlink.GenericLink
+	wgClient   *wgctrl.Client
+	store      *Store
+	closing    chan bool
+	rpcClient  *rpc.Client
+	serverMode bool
 }
 
 func main() {
@@ -28,10 +39,37 @@ func main() {
 	wgMgr := WGMgr{
 		closing: closingChan,
 	}
-	wgMgr.setupStore()
-	wgMgr.SetupInterfaces()
-	wgMgr.setupRoutes()
-	go setupServer()
+	serverFlag := flag.Bool("server", false, "set to run rpc server, otherwise assume http server")
+	flag.Parse()
+	if *serverFlag {
+		wgMgr.serverMode = true
+		wgMgr.setupClient();
+		rpcServer := &WGRpc{
+			wgMgr: &wgMgr,
+		}
+		err := rpc.Register(rpcServer)
+		if err != nil {
+			log.Fatalf("Format of service WGMgr isn't correct. %s", err)
+		}
+		rpc.HandleHTTP()
+		l, e := net.Listen("tcp", "127.0.0.1:39252")
+		if e != nil {
+			log.Fatalf("Couldn't start listening. Error %s", e)
+		}
+		log.Println("Serving RPC handler")
+		go http.Serve(l, nil)
+	} else {
+		var err error
+		//make connection to rpc server
+		wgMgr.rpcClient, err = rpc.DialHTTP("tcp", "127.0.0.1:39252")
+		if err != nil {
+			log.Fatalf("Error in dialing. %s", err)
+		}
+		wgMgr.setupStore()
+		wgMgr.setupInterfaces()
+		wgMgr.setupRoutes()
+		go setupServer()
+	}
 	for {
 		select {
 		case <-wgMgr.closing:
@@ -39,16 +77,16 @@ func main() {
 			os.Exit(0)
 		}
 	}
-	// defer db.Close()
-	// defer wgClient.Close()
-	// defer cleanUp()
 }
 
 func (w *WGMgr) cleanUp() {
-	w.store.Close()
-	err := netlink.LinkDel(w.wgInt)
-	if err != nil {
-		log.Fatal(err.Error())
+	if w.serverMode {
+		err := netlink.LinkDel(w.wgInt)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	} else {
+		w.store.Close()
 	}
 }
 
@@ -69,12 +107,6 @@ func (w *WGMgr) setupRoutes() {
 }
 
 func setupServer() {
-	//var err error
-	// var devices []*wgtypes.Device
-	// devices, err = wgClient.Devices()
-	// if err != nil {
-	// 	log.Fatalf("failed to get devices: %v", err)
-	// }
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 

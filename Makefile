@@ -8,10 +8,14 @@ build_debug:
 	go build -gcflags=all="-N -l" -o build/wgmgr
 
 run: build
-	sudo ./build/wgmgr
+	./build/wgmgr
+
+run_server: build
+	sudo ./build/wgmgr -server
 
 debug: build_debug
 	sudo gdb ./build/wgmgr
 
 debug_server: build_debug
-	sudo gdbserver 127.0.0.1:33333 ./build/wgmgr
+	sudo gdb --args ./build/wgmgr -server
+

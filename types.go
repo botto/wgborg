@@ -2,6 +2,7 @@ package main
 
 import (
 	uuid "github.com/google/uuid"
+	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
 
 // Peer is a WireGuard peer
@@ -20,4 +21,17 @@ type Network struct {
 	PrivateKey string     `json:"private_key"`
 	Port       int        `json:"port"`
 	CIDR       string     `json:"cidr"`
+}
+
+// InterfaceConfig is the interface configuration
+type InterfaceConfig struct {
+	Port             int
+	PrivateKeyString string
+	InterfaceName    string
+}
+
+// InterfacePeersConfig is the peers list of the interface
+type InterfacePeersConfig struct {
+	WGPeers       *[]wgtypes.PeerConfig
+	InterfaceName string
 }
