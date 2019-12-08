@@ -53,6 +53,7 @@ func main() {
 			for _, cb := range wgMgr.shutdownFunctions {
 				cb()
 			}
+			wgMgr.cleanUp()
 			os.Exit(0)
 		}
 	}

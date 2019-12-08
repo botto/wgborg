@@ -39,11 +39,12 @@ func (w *WGMgr) setupInterfaces() {
 		fmt.Println("Calling RPC")
 		w.rpcClient.Call("WGRpc.ConfigureInterface", iConfig, rpcRes)
 		interfacePeers := w.GetNetworkPeers(ifDev.ID)
-		peersConfig := &InterfacePeersConfig{
+		peersConfig := InterfacePeersConfig{
 			WGPeers:       interfacePeers,
 			InterfaceName: ifDev.Name,
 		}
-		w.rpcClient.Call("WGRpc.SetPeersOnInterface", peersConfig, rpcRes)
+		w.rpcClient.Call("WGRpc.SetPeersOnInterface", &peersConfig, rpcRes)
+		fmt.Printf("RPC Res: %+v", rpcRes)
 	}
 }
 

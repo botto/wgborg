@@ -39,7 +39,7 @@ func (wg *WGMgr) handlerAddPeer(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "IP Address could not be parsed as CIDR address (i.e.: 123.123.123.123/128)", 400)
 		return
 	}
-	//networkName, err := wg.store.GetNetworkNameByID(newPeerData.NetworkID)
+	networkName, err := wg.store.GetNetworkNameByID(newPeerData.NetworkID)
 	if err != nil {
 		http.Error(w, "Network ID could not be found", 400)
 		log.Printf("Could not find %s", err)
@@ -52,8 +52,13 @@ func (wg *WGMgr) handlerAddPeer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	newPeers := []wgtypes.PeerConfig{*newWgPeer}
-	fmt.Printf("Bla: %+v", newPeers)
-	//wg.AddWgPeersToDevice(&newPeers, networkName)
+	peersConfig := InterfacePeersConfig{
+		WGPeers:       &newPeers,
+		InterfaceName: networkName,
+	}
+	var rpcRes interface{}
+	wg.rpcClient.Call("WGRpc.AddWgPeersToInterface", &peersConfig, rpcRes)
+	fmt.Printf("RPC Res: %+v", rpcRes)
 }
 
 func (wg *WGMgr) handlerAddNetwork(w http.ResponseWriter, r *http.Request) {
