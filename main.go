@@ -4,8 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net"
-	"net/http"
 	"net/rpc"
 	"os"
 	"os/signal"
@@ -24,12 +22,13 @@ import (
 
 // WGMgr container struct
 type WGMgr struct {
-	wgInt      *netlink.GenericLink
-	wgClient   *wgctrl.Client
-	store      *Store
-	closing    chan bool
-	rpcClient  *rpc.Client
-	serverMode bool
+	wgInt             *netlink.GenericLink
+	wgClient          *wgctrl.Client
+	store             *Store
+	closing           chan bool
+	rpcClient         *rpc.Client
+	serverMode        bool
+	shutdownFunctions []func()
 }
 
 func main() {
@@ -37,43 +36,23 @@ func main() {
 	closingChan := make(chan bool)
 	handleSignals(closingChan)
 	wgMgr := WGMgr{
-		closing: closingChan,
+		closing:           closingChan,
+		shutdownFunctions: make([]func(), 0),
 	}
 	serverFlag := flag.Bool("server", false, "set to run rpc server, otherwise assume http server")
 	flag.Parse()
 	if *serverFlag {
-		wgMgr.serverMode = true
-		wgMgr.setupClient();
-		rpcServer := &WGRpc{
-			wgMgr: &wgMgr,
-		}
-		err := rpc.Register(rpcServer)
-		if err != nil {
-			log.Fatalf("Format of service WGMgr isn't correct. %s", err)
-		}
-		rpc.HandleHTTP()
-		l, e := net.Listen("tcp", "127.0.0.1:39252")
-		if e != nil {
-			log.Fatalf("Couldn't start listening. Error %s", e)
-		}
-		log.Println("Serving RPC handler")
-		go http.Serve(l, nil)
+		startRPCServer(&wgMgr)
 	} else {
-		var err error
-		//make connection to rpc server
-		wgMgr.rpcClient, err = rpc.DialHTTP("tcp", "127.0.0.1:39252")
-		if err != nil {
-			log.Fatalf("Error in dialing. %s", err)
-		}
-		wgMgr.setupStore()
-		wgMgr.setupInterfaces()
-		wgMgr.setupRoutes()
-		go setupServer()
+		startHTTPServer(&wgMgr)
 	}
 	for {
 		select {
 		case <-wgMgr.closing:
-			wgMgr.cleanUp()
+			// Call each function that has registered a "shutdown" hooko
+			for _, cb := range wgMgr.shutdownFunctions {
+				cb()
+			}
 			os.Exit(0)
 		}
 	}
@@ -102,12 +81,9 @@ func (w *WGMgr) setupStore() {
 	w.store.Connect(&storeCfg)
 }
 
-func (w *WGMgr) setupRoutes() {
-	http.HandleFunc("/add_peer", w.handlerAddPeer)
-}
-
-func setupServer() {
-	log.Fatal(http.ListenAndServe(":8080", nil))
+// AddShutdownCB allow graceful shutdown
+func (w *WGMgr) AddShutdownCB(cb func()) {
+	w.shutdownFunctions = append(w.shutdownFunctions, cb)
 }
 
 // Handle termination of the application. Perform any cleanup required here.
