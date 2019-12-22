@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -34,9 +33,9 @@ func (wg *WGMgr) handlerAddPeer(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Missing valid Network uuid.", 400)
 		return
 	}
-	_, _, err = net.ParseCIDR(newPeerData.CIDR)
+	_, _, err = net.ParseCIDR(newPeerData.IP)
 	if err != nil {
-		http.Error(w, "IP Address could not be parsed as CIDR address (i.e.: 123.123.123.123/128)", 400)
+		http.Error(w, "IP Address is not a valid CIDR address (i.e.: 123.123.123.123/128)", 400)
 		return
 	}
 	networkName, err := wg.store.GetNetworkNameByID(newPeerData.NetworkID)
@@ -58,7 +57,6 @@ func (wg *WGMgr) handlerAddPeer(w http.ResponseWriter, r *http.Request) {
 	}
 	var rpcRes interface{}
 	wg.rpcClient.Call("WGRpc.AddWgPeersToInterface", &peersConfig, rpcRes)
-	fmt.Printf("RPC Res: %+v", rpcRes)
 }
 
 func (wg *WGMgr) handlerAddNetwork(w http.ResponseWriter, r *http.Request) {
@@ -81,9 +79,16 @@ func (wg *WGMgr) handlerAddNetwork(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Name length must be > 0 or < 255", 400)
 		return
 	}
-	_, _, err = net.ParseCIDR(newNetworkData.CIDR)
+	_, _, err = net.ParseCIDR(newNetworkData.IP)
 	if err != nil {
-		http.Error(w, "IP Address could not be parsed as CIDR address (i.e.: 123.123.123.123/128)", 400)
+		http.Error(w, "IP Address could not a valid CIDR address (i.e.: 123.123.123.123/128)", 400)
 		return
 	}
+	newNetworkConfig := InterfaceConfig{
+		Port:             newNetworkData.Port,
+		InterfaceName:    newNetworkData.Name,
+		PrivateKeyString: newNetworkData.PrivateKey,
+	}
+	var rpcRes interface{}
+	wg.rpcClient.Call("WGRpc.AddWgPeersToInterface", newNetworkConfig, rpcRes)
 }

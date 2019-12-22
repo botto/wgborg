@@ -64,7 +64,7 @@ func (s *Store) LoadPeers(networkID string) ([]Peer, error) {
 			peer_name,
 			public_key,
 			psk,
-			cidr
+			ipv4
 		FROM peers
 		WHERE network = $1`
 	rows, err := s.db.Query(allPeersSQL, networkID)
@@ -79,7 +79,7 @@ func (s *Store) LoadPeers(networkID string) ([]Peer, error) {
 			&newPeer.Name,
 			&newPeer.PublicKey,
 			&newPeer.Psk,
-			&newPeer.CIDR,
+			&newPeer.IP,
 		)
 		newPeers = append(newPeers, newPeer)
 	}
@@ -102,7 +102,7 @@ func (s *Store) LoadNetworks() ([]Network, error) {
 			name,
 			private_key,
 			port,
-			cidr
+			ipv4
 		FROM networks`
 	rows, err := s.db.Query(allPeersSQL)
 	if err != nil {
@@ -117,7 +117,7 @@ func (s *Store) LoadNetworks() ([]Network, error) {
 			&newNetwork.Name,
 			&newNetwork.PrivateKey,
 			&newNetwork.Port,
-			&newNetwork.CIDR,
+			&newNetwork.IP,
 		)
 		newNetworks = append(newNetworks, newNetwork)
 		if err != nil {
@@ -138,14 +138,26 @@ func (s *Store) LoadNetworks() ([]Network, error) {
 // AddPeer add a new peer to a specific network
 func (s *Store) AddPeer(newPeer *Peer) {
 	newPeerSQL := `
-		INSERT INTO peers (peer_name, public_key, psk, cidr, network)
-		VALUES ($1, $2, $3, $4, $5)`
+		INSERT INTO peers (
+			peer_name,
+			public_key,
+			psk,
+			ipv4,
+			network
+		)
+		VALUES (
+			$1,
+			$2,
+			$3,
+			$4,
+			$5
+		)`
 	_, err := s.db.Exec(
 		newPeerSQL,
 		newPeer.Name,
 		newPeer.PublicKey,
 		newPeer.Psk,
-		newPeer.CIDR,
+		newPeer.IP,
 		newPeer.NetworkID,
 	)
 	if err != nil {

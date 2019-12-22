@@ -97,3 +97,39 @@ func handleSignals(closing chan<- bool) {
 		closing <- true
 	}()
 }
+
+func (w *WGMgr) setupClient() {
+	var err error
+	w.wgClient, err = wgctrl.New()
+	if err != nil {
+		log.Fatalf("failed to open wgctrl: %v", err)
+	}
+}
+
+// initInterfaces gets all interface from the store
+// and configurs them and adds the peers.
+func (w *WGMgr) initInterfaces() {
+	networks, err := w.store.LoadNetworks()
+	if err != nil {
+		fmt.Printf("Err :%s", err)
+		log.Printf("Could not load networks.")
+		log.Print(err)
+		return
+	}
+	for _, ifDev := range networks {
+		iConfig := &InterfaceConfig{
+			Port:             ifDev.Port,
+			PrivateKeyString: ifDev.PrivateKey,
+			InterfaceName:    ifDev.Name,
+			IP:               ifDev.IP,
+		}
+		var rpcRes interface{}
+		w.rpcClient.Call("WGRpc.ConfigureInterface", iConfig, rpcRes)
+		interfacePeers := w.GetNetworkPeers(ifDev.ID)
+		peersConfig := InterfacePeersConfig{
+			WGPeers:       interfacePeers,
+			InterfaceName: ifDev.Name,
+		}
+		w.rpcClient.Call("WGRpc.SetPeersOnInterface", &peersConfig, rpcRes)
+	}
+}

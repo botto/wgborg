@@ -7,46 +7,8 @@ import (
 
 	uuid "github.com/google/uuid"
 	"github.com/vishvananda/netlink"
-	"golang.zx2c4.com/wireguard/wgctrl"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
-
-func (w *WGMgr) setupClient() {
-	var err error
-	w.wgClient, err = wgctrl.New()
-	if err != nil {
-		log.Fatalf("failed to open wgctrl: %v", err)
-	}
-}
-
-// SetupInterfaces gets all interface from the store
-// and configurs them and adds the peers.
-func (w *WGMgr) setupInterfaces() {
-	networks, err := w.store.LoadNetworks()
-	if err != nil {
-		fmt.Printf("Err :%s", err)
-		log.Printf("Could not load networks.")
-		log.Print(err)
-		return
-	}
-	for _, ifDev := range networks {
-		iConfig := &InterfaceConfig{
-			Port:             ifDev.Port,
-			PrivateKeyString: ifDev.PrivateKey,
-			InterfaceName:    ifDev.Name,
-		}
-		var rpcRes interface{}
-		fmt.Println("Calling RPC")
-		w.rpcClient.Call("WGRpc.ConfigureInterface", iConfig, rpcRes)
-		interfacePeers := w.GetNetworkPeers(ifDev.ID)
-		peersConfig := InterfacePeersConfig{
-			WGPeers:       interfacePeers,
-			InterfaceName: ifDev.Name,
-		}
-		w.rpcClient.Call("WGRpc.SetPeersOnInterface", &peersConfig, rpcRes)
-		fmt.Printf("RPC Res: %+v", rpcRes)
-	}
-}
 
 // ConfigureInterface sets up the wg interface
 func (w *WGMgr) ConfigureInterface(iConfig *InterfaceConfig) error {
@@ -54,13 +16,21 @@ func (w *WGMgr) ConfigureInterface(iConfig *InterfaceConfig) error {
 	if err != nil {
 		return fmt.Errorf("Could not parse key %s", err)
 	}
-	// Generate new netlink of wireguard type
+	// Generate new interface through netlink (wireguard type)
 	linkAttrs := netlink.NewLinkAttrs()
 	linkAttrs.Name = iConfig.InterfaceName
 	w.wgInt = &netlink.GenericLink{LinkAttrs: linkAttrs, LinkType: "wireguard"}
 	err = netlink.LinkAdd(w.wgInt)
 	if err != nil {
 		return fmt.Errorf("Could not add '%s' (%v)", linkAttrs.Name, err)
+	}
+	ipv4Addr, err := netlink.ParseAddr(iConfig.IP)
+	if err != nil {
+		return fmt.Errorf("IP is not valid IPv4 address %s", err)
+	}
+	err = netlink.AddrAdd(w.wgInt, ipv4Addr)
+	if err != nil {
+		return fmt.Errorf("Could not add addr %s to interface %s", iConfig.IP, err)
 	}
 	deviceConfig := wgtypes.Config{
 		PrivateKey: &privKey,
@@ -118,9 +88,9 @@ func (w *WGMgr) GetNetworkPeers(networkID *uuid.UUID) *[]wgtypes.PeerConfig {
 }
 
 func peerToWgPeer(peerDef Peer) (*wgtypes.PeerConfig, error) {
-	_, ipv4Net, err := net.ParseCIDR(peerDef.CIDR)
+	_, ipv4Net, err := net.ParseCIDR(peerDef.IP)
 	if err != nil {
-		log.Printf("Could not parse cidr for peer %s", err)
+		log.Printf("IP is not valid cidr for peer %s", err)
 		return nil, err
 	}
 	pubKey, err := wgtypes.ParseKey(peerDef.PublicKey)

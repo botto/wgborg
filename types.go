@@ -10,7 +10,7 @@ type Peer struct {
 	PublicKey string     `json:"public_key"`
 	Name      string     `json:"name"`
 	Psk       string     `json:"psk"`
-	CIDR      string     `json:"ip"`
+	IP        string     `json:"ip"`
 	NetworkID *uuid.UUID `json:"network"`
 }
 
@@ -20,7 +20,7 @@ type Network struct {
 	Name       string     `json:"name"`
 	PrivateKey string     `json:"private_key"`
 	Port       int        `json:"port"`
-	CIDR       string     `json:"cidr"`
+	IP         string     `json:"ip"`
 }
 
 // InterfaceConfig is the interface configuration
@@ -28,6 +28,7 @@ type InterfaceConfig struct {
 	Port             int
 	PrivateKeyString string
 	InterfaceName    string
+	IP               string
 }
 
 // InterfacePeersConfig is the peers list of the interface

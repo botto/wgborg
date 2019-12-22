@@ -5,6 +5,6 @@ create table if not exists networks (
   name         VARCHAR(255) NOT NULL UNIQUE,
   private_key  VARCHAR(45)  NOT NULL UNIQUE,
   port         INTEGER      NOT NULL,
-  cidr         VARCHAR(20)  NOT NULL
+  ipv4         VARCHAR(20)  NOT NULL
 )
 

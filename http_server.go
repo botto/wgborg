@@ -16,7 +16,7 @@ func startHTTPServer(wgMgr *WGMgr) {
 		log.Fatalf("Error in dialing. %s", err)
 	}
 	wgMgr.setupStore()
-	wgMgr.setupInterfaces()
+	wgMgr.initInterfaces()
 	wgMgr.setupRoutes()
 	go func() {
 		log.Fatal(srv.ListenAndServe())
@@ -28,4 +28,5 @@ func startHTTPServer(wgMgr *WGMgr) {
 
 func (w *WGMgr) setupRoutes() {
 	http.HandleFunc("/add_peer", w.handlerAddPeer)
+	http.HandleFunc("/add_network", w.handlerAddNetwork)
 }
