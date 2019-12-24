@@ -84,11 +84,13 @@ func (wg *WGMgr) handlerAddNetwork(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "IP Address could not a valid CIDR address (i.e.: 123.123.123.123/128)", 400)
 		return
 	}
+	wg.store.AddNetwork(&newNetworkData)
 	newNetworkConfig := InterfaceConfig{
+		IP:               newNetworkData.IP,
 		Port:             newNetworkData.Port,
 		InterfaceName:    newNetworkData.Name,
 		PrivateKeyString: newNetworkData.PrivateKey,
 	}
 	var rpcRes interface{}
-	wg.rpcClient.Call("WGRpc.AddWgPeersToInterface", newNetworkConfig, rpcRes)
+	wg.rpcClient.Call("WGRpc.ConfigureInterface", newNetworkConfig, rpcRes)
 }
