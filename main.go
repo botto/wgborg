@@ -22,7 +22,7 @@ import (
 
 // WGMgr container struct
 type WGMgr struct {
-	wgInt             *netlink.GenericLink
+	wgInt             []*WGInterface
 	wgClient          *wgctrl.Client
 	store             *Store
 	closing           chan bool
@@ -61,9 +61,11 @@ func main() {
 
 func (w *WGMgr) cleanUp() {
 	if w.serverMode {
-		err := netlink.LinkDel(w.wgInt)
-		if err != nil {
-			log.Fatal(err.Error())
+		for _, i := range w.wgInt {
+			err := netlink.LinkDel(i.Interface)
+			if err != nil {
+				fmt.Printf("Could not delete interface %s", i.ID)
+			}
 		}
 	} else {
 		w.store.Close()
@@ -117,14 +119,8 @@ func (w *WGMgr) initInterfaces() {
 		return
 	}
 	for _, ifDev := range networks {
-		iConfig := &InterfaceConfig{
-			Port:             ifDev.Port,
-			PrivateKeyString: ifDev.PrivateKey,
-			InterfaceName:    ifDev.Name,
-			IP:               ifDev.IP,
-		}
 		var rpcRes interface{}
-		w.rpcClient.Call("WGRpc.ConfigureInterface", iConfig, rpcRes)
+		w.rpcClient.Call("WGRpc.ConfigureInterface", ifDev, rpcRes)
 		interfacePeers := w.GetNetworkPeers(ifDev.ID)
 		if (len(*interfacePeers) > 0) {
 			peersConfig := InterfacePeersConfig{

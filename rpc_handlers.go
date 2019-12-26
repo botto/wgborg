@@ -13,7 +13,7 @@ type WGRpc struct {
 type ConfigReponseMsg int
 
 // ConfigureInterface set up WG interface.
-func (rpc *WGRpc) ConfigureInterface(iConfig InterfaceConfig, reply *int) error {
+func (rpc *WGRpc) ConfigureInterface(iConfig Network, reply *int) error {
 	err := rpc.wgMgr.ConfigureInterface(&iConfig)
 	if err != nil {
 		log.Fatalf("[RPC/ConfigureInterface] Err: %s", err)

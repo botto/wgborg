@@ -2,6 +2,7 @@ package main
 
 import (
 	uuid "github.com/google/uuid"
+	"github.com/vishvananda/netlink"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
 
@@ -23,16 +24,14 @@ type Network struct {
 	IP         string     `json:"ip"`
 }
 
-// InterfaceConfig is the interface configuration
-type InterfaceConfig struct {
-	Port             int
-	PrivateKeyString string
-	InterfaceName    string
-	IP               string
-}
-
 // InterfacePeersConfig is the peers list of the interface
 type InterfacePeersConfig struct {
 	WGPeers       *[]wgtypes.PeerConfig
 	InterfaceName string
+}
+
+// WGInterface Internal representation of WG interface
+type WGInterface struct {
+	ID        *uuid.UUID
+	Interface *netlink.GenericLink
 }

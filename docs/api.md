@@ -35,7 +35,7 @@ __POST /add_network__
 ```
 
 ```bash
-http POST 127.0.0.1:8080/add_peer private_key=testprivkeytestprivkeytestprivkeytestprivke= name=asd port=45453 ip=10.10.10.1/24
+http POST 127.0.0.1:8080/add_network private_key=testprivkeytestprivkeytestprivkeytestprivke= name=asd port=45453 ip=10.10.10.1/24
 ```
 
 The IP should be in CIDR notation i.e.: 10.10.10.1/24

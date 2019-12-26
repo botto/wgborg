@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 
+	uuid "github.com/google/uuid"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
 
@@ -92,11 +93,17 @@ func (wg *WGMgr) handlerAddNetwork(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("Error adding network: %s", err)
 		return
 	}
-	newNetworkConfig := InterfaceConfig{
-		IP:               newNetworkData.IP,
-		Port:             newNetworkData.Port,
-		InterfaceName:    newNetworkData.Name,
-		PrivateKeyString: newNetworkData.PrivateKey,
+	interfaceID, err := uuid.Parse(newID)
+	if err != nil {
+		http.Error(w, "There was a problem adding the network", 500)
+		fmt.Printf("Error parsing UUID: %s", err)
+	}
+	newNetworkConfig := Network{
+		ID:         &interfaceID,
+		IP:         newNetworkData.IP,
+		Port:       newNetworkData.Port,
+		Name:       newNetworkData.Name,
+		PrivateKey: newNetworkData.PrivateKey,
 	}
 	var rpcRes interface{}
 	wg.rpcClient.Call("WGRpc.ConfigureInterface", newNetworkConfig, rpcRes)

@@ -49,6 +49,7 @@ This will compile with less optimizations and the gdb as sudo.
 - [x] Clean up after ourselves
 - [ ] Set up remaing api endpoints
 - [ ] Refactor store so it's pluggable (i.e.: sqlite, bbolt, consul)
+- [ ] Cleanup internal types, a few too many floating around
 
 
 ## Disclaimer

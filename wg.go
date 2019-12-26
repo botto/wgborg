@@ -5,22 +5,34 @@ import (
 	"log"
 	"net"
 
-	uuid "github.com/google/uuid"
+	"github.com/google/uuid"
 	"github.com/vishvananda/netlink"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
 
 // ConfigureInterface sets up the wg interface
-func (w *WGMgr) ConfigureInterface(iConfig *InterfaceConfig) error {
-	privKey, err := wgtypes.ParseKey(iConfig.PrivateKeyString)
+func (w *WGMgr) ConfigureInterface(iConfig *Network) error {
+	privKey, err := wgtypes.ParseKey(iConfig.PrivateKey)
 	if err != nil {
 		return fmt.Errorf("Could not parse key %s", err)
 	}
-	// Generate new interface through netlink (wireguard type)
 	linkAttrs := netlink.NewLinkAttrs()
-	linkAttrs.Name = iConfig.InterfaceName
-	w.wgInt = &netlink.GenericLink{LinkAttrs: linkAttrs, LinkType: "wireguard"}
-	err = netlink.LinkAdd(w.wgInt)
+	linkAttrs.Name = iConfig.Name
+	interfaceID, err := uuid.Parse(iConfig.ID.String())
+	if err != nil {
+		return fmt.Errorf("A valid UUID was not provided: %s", err)
+	}
+	newInterface := WGInterface{
+		ID: &interfaceID,
+	}
+
+	// Generate new interface through netlink (wireguard type)
+	newInterface.Interface = &netlink.GenericLink{
+		LinkAttrs: linkAttrs,
+		LinkType:  "wireguard",
+	}
+	w.wgInt = append(w.wgInt, &newInterface)
+	err = netlink.LinkAdd(newInterface.Interface)
 	if err != nil {
 		return fmt.Errorf("Could not add '%s' (%v)", linkAttrs.Name, err)
 	}
@@ -28,7 +40,7 @@ func (w *WGMgr) ConfigureInterface(iConfig *InterfaceConfig) error {
 	if err != nil {
 		return fmt.Errorf("IP is not valid IPv4 address %s", err)
 	}
-	err = netlink.AddrAdd(w.wgInt, ipv4Addr)
+	err = netlink.AddrAdd(newInterface.Interface, ipv4Addr)
 	if err != nil {
 		return fmt.Errorf("Could not add addr %s to interface %s", iConfig.IP, err)
 	}
