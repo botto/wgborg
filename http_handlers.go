@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -61,6 +62,7 @@ func (wg *WGMgr) handlerAddPeer(w http.ResponseWriter, r *http.Request) {
 
 func (wg *WGMgr) handlerAddNetwork(w http.ResponseWriter, r *http.Request) {
 	var newNetworkData Network
+	var newID string
 	err := json.NewDecoder(r.Body).Decode(&newNetworkData)
 
 	if err != nil {
@@ -84,7 +86,12 @@ func (wg *WGMgr) handlerAddNetwork(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "IP Address could not a valid CIDR address (i.e.: 123.123.123.123/128)", 400)
 		return
 	}
-	wg.store.AddNetwork(&newNetworkData)
+	newID, err = wg.store.AddNetwork(&newNetworkData)
+	if err != nil {
+		http.Error(w, "There was an error adding the new network", 500)
+		fmt.Printf("Error adding network: %s", err)
+		return
+	}
 	newNetworkConfig := InterfaceConfig{
 		IP:               newNetworkData.IP,
 		Port:             newNetworkData.Port,
@@ -93,4 +100,9 @@ func (wg *WGMgr) handlerAddNetwork(w http.ResponseWriter, r *http.Request) {
 	}
 	var rpcRes interface{}
 	wg.rpcClient.Call("WGRpc.ConfigureInterface", newNetworkConfig, rpcRes)
+	httpOut := map[string]interface{}{
+		"NewID": newID,
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(httpOut)
 }

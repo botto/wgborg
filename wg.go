@@ -73,7 +73,6 @@ func (w *WGMgr) AddWgPeersToInterface(conf *InterfacePeersConfig) error {
 func (w *WGMgr) GetNetworkPeers(networkID *uuid.UUID) *[]wgtypes.PeerConfig {
 	var wgPeers []wgtypes.PeerConfig
 	peers, err := w.store.LoadPeers(networkID.String())
-	fmt.Printf("Peers: %s\n", peers)
 	if err != nil {
 		log.Fatalf("Could not load peers %s", err)
 	}

@@ -85,12 +85,12 @@ func (s *Store) LoadPeers(networkID string) ([]Peer, error) {
 	}
 	err = rows.Err()
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	if len(newPeers) > 0 {
 		return newPeers, nil
 	}
-	return nil, errors.New("no peers found")
+	return nil, nil
 }
 
 // LoadNetworks gets the networks from the store and returns as Network list.
@@ -163,6 +163,38 @@ func (s *Store) AddPeer(newPeer *Peer) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+// AddNetwork adds new network
+func (s *Store) AddNetwork(newNetwork *Network) (string, error) {
+	var insertID string
+	newNetworkPre, err := s.db.Prepare(`
+		INSERT INTO networks (
+			name,
+			private_key,
+			port,
+			ipv4
+		)
+		VALUES (
+			$1,
+			$2,
+			$3,
+			$4
+		)
+		RETURNING id`)
+	if err != nil {
+		return "", fmt.Errorf("There was a problem preparing SQL: %s", err)
+	}
+	err = newNetworkPre.QueryRow(
+		newNetwork.Name,
+		newNetwork.PrivateKey,
+		newNetwork.Port,
+		newNetwork.IP,
+	).Scan(&insertID)
+	if err != nil {
+		return "", fmt.Errorf("There was a problem executing the query: %s", err)
+	}
+	return insertID, nil
 }
 
 // GetNetworkNameByID returns the name of the WG network.
