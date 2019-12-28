@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 
-	uuid "github.com/google/uuid"
 	_ "github.com/lib/pq"
 )
 
@@ -198,10 +197,10 @@ func (s *Store) AddNetwork(newNetwork *Network) (string, error) {
 }
 
 // GetNetworkNameByID returns the name of the WG network.
-func (s *Store) GetNetworkNameByID(networkID *uuid.UUID) (string, error) {
+func (s *Store) GetNetworkNameByID(networkID string) (string, error) {
 	var name string
 	networkNameSQL := `SELECT name FROM networks WHERE id=$1`
-	row := s.db.QueryRow(networkNameSQL, networkID.String())
+	row := s.db.QueryRow(networkNameSQL, networkID)
 	err := row.Scan(&name)
 	if err != nil {
 		return "", err

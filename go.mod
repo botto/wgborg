@@ -5,6 +5,8 @@ require (
 	github.com/caarlos0/env v3.5.0+incompatible // indirect
 	github.com/caarlos0/env/v6 v6.1.0
 	github.com/creack/pty v1.1.9 // indirect
+	github.com/go-playground/validator v9.31.0+incompatible
+	github.com/go-playground/validator/v10 v10.1.0
 	github.com/google/uuid v1.1.1
 	github.com/jsimonetti/rtnetlink v0.0.0-20191223084007-1b9462860ac0 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect

@@ -18,12 +18,12 @@ func (w *WGMgr) ConfigureInterface(iConfig *Network) error {
 	}
 	linkAttrs := netlink.NewLinkAttrs()
 	linkAttrs.Name = iConfig.Name
-	interfaceID, err := uuid.Parse(iConfig.ID.String())
+	_, err = uuid.Parse(iConfig.ID)
 	if err != nil {
 		return fmt.Errorf("A valid UUID was not provided: %s", err)
 	}
 	newInterface := WGInterface{
-		ID: &interfaceID,
+		ID: iConfig.ID,
 	}
 
 	// Generate new interface through netlink (wireguard type)
@@ -82,9 +82,9 @@ func (w *WGMgr) AddWgPeersToInterface(conf *InterfacePeersConfig) error {
 }
 
 // GetNetworkPeers grabs peers from DB.
-func (w *WGMgr) GetNetworkPeers(networkID *uuid.UUID) *[]wgtypes.PeerConfig {
+func (w *WGMgr) GetNetworkPeers(networkID string) *[]wgtypes.PeerConfig {
 	var wgPeers []wgtypes.PeerConfig
-	peers, err := w.store.LoadPeers(networkID.String())
+	peers, err := w.store.LoadPeers(networkID)
 	if err != nil {
 		log.Fatalf("Could not load peers %s", err)
 	}

@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/go-playground/validator/v10"
 	_ "github.com/lib/pq"
 	"github.com/vishvananda/netlink"
 	"golang.zx2c4.com/wireguard/wgctrl"
@@ -29,6 +30,7 @@ type WGMgr struct {
 	rpcClient         *rpc.Client
 	serverMode        bool
 	shutdownFunctions []func()
+	validate          *validator.Validate
 }
 
 func main() {
@@ -38,6 +40,7 @@ func main() {
 	wgMgr := WGMgr{
 		closing:           closingChan,
 		shutdownFunctions: make([]func(), 0),
+		validate:          validator.New(),
 	}
 	serverFlag := flag.Bool("server", false, "set to run rpc server, otherwise assume http server")
 	flag.Parse()
@@ -122,7 +125,7 @@ func (w *WGMgr) initInterfaces() {
 		var rpcRes interface{}
 		w.rpcClient.Call("WGRpc.ConfigureInterface", ifDev, rpcRes)
 		interfacePeers := w.GetNetworkPeers(ifDev.ID)
-		if (len(*interfacePeers) > 0) {
+		if len(*interfacePeers) > 0 {
 			peersConfig := InterfacePeersConfig{
 				WGPeers:       interfacePeers,
 				InterfaceName: ifDev.Name,
